@@ -140,8 +140,7 @@ public:
 
 protected:
 	// Follow Perspectives set by the parameter FLW_TGT_FP
-	enum kFollowPerspective : uint8_t
-	{
+	enum kFollowPerspective : uint8_t {
 		kFollowPerspectiveBehind,
 		kFollowPerspectiveFront,
 		kFollowPerspectiveFrontRight,
@@ -166,8 +165,7 @@ protected:
 	};
 
 	// Follow Altitude modes set by the parameter FLW_TGT_ALT_M
-	enum kFollowAltitudeMode
-	{
+	enum kFollowAltitudeMode {
 		kFollowAltitudeModeConstant,
 		kFollowAltitudeModeTerrain,
 		kFollowAltitudeModeTrackTarget
@@ -204,7 +202,8 @@ protected:
 	 * @param measured_angle [rad] Measured current drone's orbit angle around the target (depends on tracked target orientation for reference)
 	 * @param tracked_orbit_angle_setpoint [rad] Rate constrained orbit angle setpoint value from last command
 	 */
-	void updateRcAdjustedFollowAngle(const Sticks &sticks, const float measured_orbit_angle, const float tracked_orbit_angle_setpoint);
+	void updateRcAdjustedFollowAngle(const Sticks &sticks, const float measured_orbit_angle,
+					 const float tracked_orbit_angle_setpoint);
 
 	/**
 	 * Update the Second Order Target Position + Velocity Filter to track kinematically feasible target position and velocity
@@ -227,7 +226,8 @@ protected:
 	 *
 	 * @return [rad] Updated target orientation
 	 */
-	float updateTargetOrientation(const float current_target_orientation, const Vector2f &target_velocity, const Vector2f &target_velocity_unfiltered) const;
+	float updateTargetOrientation(const float current_target_orientation, const Vector2f &target_velocity,
+				      const Vector2f &target_velocity_unfiltered) const;
 
 	/**
 	 * Updates the orbit angle setpoint and a jerk limited trajectory to reach it.
