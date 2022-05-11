@@ -79,15 +79,15 @@ PARAM_DEFINE_FLOAT(FLW_TGT_DST, 8.0f);
  *
  * The side to follow the target from
  *
- * @value 0 None (default, Behind)
- * @value 1 Behind
- * @value 2 front
- * @value 3 front right
- * @value 4 front left
- * @value 5 mid right
- * @value 6 mid left
- * @value 7 behind right
- * @value 8 behind left
+ * @value 0 Behind
+ * @value 1 Front
+ * @value 2 Front Right
+ * @value 3 Front Left
+ * @value 4 Right
+ * @value 5 Left
+ * @value 6 Behind Right
+ * @value 7 Behind Left
+ * @value 8 Invalid (defaults to Behind)
  *
  * @min 0
  * @max 8
