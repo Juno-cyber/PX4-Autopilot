@@ -77,6 +77,12 @@ static constexpr float ALT_ACCEPTANCE_THRESHOLD = 3.0f;
 // [m] Minimum distance between drone and target for the drone to do any yaw control.
 static constexpr float MINIMUM_DISTANCE_TO_TARGET_FOR_YAW_CONTROL = 1.0f;
 
+// [deg] Minimum Follow angle that can be set by the user through the FLW_TGT_FA parameter
+static constexpr float FOLLOW_ANGLE_MINIMUM_DEG = -180.0f;
+
+// [deg] Maximum Follow angle that can be set by the user through the FLW_TGT_FA parameter
+static constexpr float FOLLOW_ANGLE_MAXIMUM_DEG = 180.0f;
+
 // << Target Position Velocity Estimator related constants >>
 
 // [rad/s] Second Order reference model filter natural frequency
@@ -139,31 +145,6 @@ public:
 	void updateParams() override;
 
 protected:
-	// Follow Perspectives set by the parameter FLW_TGT_FP
-	enum kFollowPerspective : uint8_t {
-		kFollowPerspectiveBehind,
-		kFollowPerspectiveFront,
-		kFollowPerspectiveFrontRight,
-		kFollowPerspectiveFrontLeft,
-		kFollowPerspectiveRight,
-		kFollowPerspectiveLeft,
-		kFollowPerspectiveBehindRight,
-		kFollowPerspectiveBehindLeft,
-		kFollowPerspectiveInvalid // Leave this as last!
-	};
-
-	// Angles [deg] for the different follow perspectives
-	static constexpr float kFollowPerspectiveAnglesDeg[kFollowPerspectiveInvalid] = {
-		180.f, // Behind
-		0.0f, // Front
-		45.0f, // Front right
-		-45.0f, // Front left
-		90.0f, // Right
-		-90.0f, // Left
-		135.0f, // Behind right
-		-135.0f // Behind left
-	};
-
 	// Follow Altitude modes set by the parameter FLW_TGT_ALT_M
 	enum kFollowAltitudeMode {
 		kFollowAltitudeModeConstant,
@@ -259,16 +240,6 @@ protected:
 	Vector3f calculateDesiredDronePosition(const Vector3f &target_position, const float orbit_angle_setpoint) const;
 
 	/**
-	 * Convert the follow perspective into an angle in [rad]
-	 *
-	 * If the Follow perspective is out of bound, it defaults to the perspective behind
-	 *
-	 * @param follow_perspective value of the parameter FLW_TGT_FP
-	 * @return [rad] Follow angle, with zero degrees being the target's 12 o'clock
-	 */
-	float convertFollowPerspectiveToRadians(const kFollowPerspective follow_perspective) const;
-
-	/**
 	 * Calculate the gimbal height offset to the target
 	 *
 	 * @param altitude_mode Current Follow Target Altitude mode
@@ -333,7 +304,7 @@ protected:
 		(ParamInt<px4::params::MAV_COMP_ID>) _param_mav_comp_id,
 		(ParamFloat<px4::params::FLW_TGT_HT>) _param_flw_tgt_ht,
 		(ParamFloat<px4::params::FLW_TGT_DST>) _param_flw_tgt_dst,
-		(ParamInt<px4::params::FLW_TGT_FP>) _param_flw_tgt_fp,
+		(ParamFloat<px4::params::FLW_TGT_FA>) _param_flw_tgt_fa,
 		(ParamInt<px4::params::FLW_TGT_ALT_M>) _param_flw_tgt_alt_m,
 		(ParamFloat<px4::params::FLW_TGT_MAX_VEL>) _param_flw_tgt_max_vel
 	)

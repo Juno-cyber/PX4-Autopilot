@@ -75,25 +75,17 @@ PARAM_DEFINE_FLOAT(FLW_TGT_HT, 8.0f);
 PARAM_DEFINE_FLOAT(FLW_TGT_DST, 8.0f);
 
 /**
- * Perspective to follow target from
+ * Follow Angle setting in degrees
  *
- * The side to follow the target from
+ * Angle to follow the target from. 0.0 Equals straight in front of the target's
+ * course (direction of motion) and the angle increases in clockwise direction,
+ * meaning Right-side would be 90.0 degrees while Left-side is -90.0 degrees
  *
- * @value 0 Behind
- * @value 1 Front
- * @value 2 Front Right
- * @value 3 Front Left
- * @value 4 Right
- * @value 5 Left
- * @value 6 Behind Right
- * @value 7 Behind Left
- * @value 8 Invalid (defaults to Behind)
- *
- * @min 0
- * @max 8
+ * @min -180.0
+ * @max 180.0
  * @group Follow target
  */
-PARAM_DEFINE_INT32(FLW_TGT_FP, 1);
+PARAM_DEFINE_FLOAT(FLW_TGT_FA, 180.0f);
 
 /**
  * Altitude control mode

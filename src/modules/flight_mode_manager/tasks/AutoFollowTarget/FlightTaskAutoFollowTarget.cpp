@@ -50,9 +50,6 @@ using matrix::Vector3f;
 using matrix::Quatf;
 using matrix::Eulerf;
 
-// Declare the static member array defined in the header file
-constexpr float FlightTaskAutoFollowTarget::kFollowPerspectiveAnglesDeg[];
-
 // Call the constructor of _sticks to establish Follow Target class as a parent as ModuleParams class
 // which enables chained paramter update sequence, which keeps the parameters in _sticks up to date.
 FlightTaskAutoFollowTarget::FlightTaskAutoFollowTarget() : _sticks(this)
@@ -83,7 +80,8 @@ bool FlightTaskAutoFollowTarget::activate(const trajectory_setpoint_s &last_setp
 	_yawspeed_setpoint = NAN;
 
 	// Update the internally tracked Follow Target characteristics
-	_follow_angle_rad = convertFollowPerspectiveToRadians((kFollowPerspective)_param_flw_tgt_fp.get());
+	_follow_angle_rad = math::radians(constrain(_param_flw_tgt_fa.get(), FOLLOW_ANGLE_MINIMUM_DEG,
+					  FOLLOW_ANGLE_MAXIMUM_DEG));
 	_follow_distance = _param_flw_tgt_dst.get();
 	_follow_height = _param_flw_tgt_ht.get();
 
@@ -106,7 +104,7 @@ void FlightTaskAutoFollowTarget::updateParams()
 	// Copy previous param values to check if it changes after param update
 	const float follow_distance_prev = _param_flw_tgt_dst.get();
 	const float follow_height_prev = _param_flw_tgt_ht.get();
-	const kFollowPerspective follow_perspective_prev = (kFollowPerspective)_param_flw_tgt_fp.get();
+	const float follow_angle_prev = _param_flw_tgt_fa.get();
 
 	// Call updateParams in parent class to update parameters from child up until ModuleParam base class
 	FlightTask::updateParams();
@@ -120,8 +118,9 @@ void FlightTaskAutoFollowTarget::updateParams()
 		_follow_height = _param_flw_tgt_ht.get();
 	}
 
-	if (follow_perspective_prev != _param_flw_tgt_fp.get()) {
-		_follow_angle_rad = convertFollowPerspectiveToRadians((kFollowPerspective)_param_flw_tgt_fp.get());
+	if (!matrix::isEqualF(follow_angle_prev, _param_flw_tgt_fa.get())) {
+		_follow_angle_rad = math::radians(constrain(_param_flw_tgt_fa.get(), FOLLOW_ANGLE_MINIMUM_DEG,
+						  FOLLOW_ANGLE_MAXIMUM_DEG));
 	}
 }
 
@@ -443,16 +442,6 @@ bool FlightTaskAutoFollowTarget::update()
 	_constraints.want_takeoff = _checkTakeoff();
 
 	return true;
-}
-
-float FlightTaskAutoFollowTarget::convertFollowPerspectiveToRadians(const kFollowPerspective follow_perspective) const
-{
-	if (follow_perspective >= kFollowPerspectiveInvalid) {
-		return math::radians(kFollowPerspectiveAnglesDeg[kFollowPerspectiveBehind]);
-
-	} else {
-		return math::radians(kFollowPerspectiveAnglesDeg[follow_perspective]);
-	}
 }
 
 void FlightTaskAutoFollowTarget::releaseGimbalControl()
