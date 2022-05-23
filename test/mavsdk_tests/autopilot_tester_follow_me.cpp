@@ -36,6 +36,7 @@
 // #include <mavsdk/plugins/follow_me/follow_me.h>
 
 #include "math_helpers.h"
+
 #include <iostream>
 #include <future>
 #include <thread>
@@ -163,42 +164,17 @@ void FollowTargetSimulator::check_follow_angle(FollowMe::Config config, std::arr
 		std::array<float, 3> target_pos_ned, float tolerance)
 {
 	// This check assumes that the target is travelling straight on the x-axis
-	const float x_dist_to_target = target_pos_ned[0] - drone_pos_ned[0];
-	const float y_dist_to_target = target_pos_ned[1] - drone_pos_ned[1];
+	const float target_to_drone_offset_x = drone_pos_ned[0] - target_pos_ned[0];
+	const float target_to_drone_offset_y = drone_pos_ned[1] - target_pos_ned[1];
 
-	switch (config.follow_direction) {
-	case FollowMe::Config::FollowDirection::None:
-		CHECK(x_dist_to_target < tolerance);
-		CHECK(x_dist_to_target > -tolerance);
-		CHECK(y_dist_to_target < tolerance);
-		CHECK(y_dist_to_target > -tolerance);
-		break;
+	// Follow Angle is measured relative from the target's course (direction it is moving towards)
+	const float target_to_drone_angle_expected_rad = config.follow_angle_deg * (M_PI / 180.0f);
+	const float target_to_drone_offset_x_expected = config.follow_distance_m * cos(target_to_drone_angle_expected_rad);
+	const float target_to_drone_offset_y_expected = config.follow_distance_m * sin(target_to_drone_angle_expected_rad);
 
-	case FollowMe::Config::FollowDirection::Behind:
-		CHECK(drone_pos_ned[0] < target_pos_ned[0]);
-		CHECK(y_dist_to_target < tolerance);
-		CHECK(y_dist_to_target > -tolerance);
-		break;
-
-	case FollowMe::Config::FollowDirection::Front:
-		CHECK(drone_pos_ned[0] > target_pos_ned[0]);
-		CHECK(y_dist_to_target < tolerance);
-		CHECK(y_dist_to_target > -tolerance);
-		break;
-
-	case FollowMe::Config::FollowDirection::FrontRight:
-		CHECK(drone_pos_ned[0] > target_pos_ned[0]);
-		CHECK(drone_pos_ned[1] > target_pos_ned[1]);
-		break;
-
-	case FollowMe::Config::FollowDirection::FrontLeft:
-		CHECK(drone_pos_ned[0] > target_pos_ned[0]);
-		CHECK(drone_pos_ned[1] < target_pos_ned[1]);
-		break;
-
-	default:
-		break;
-	}
+	// Check that drone is following at an expected position within the tolerance error
+	CHECK(fabsf(target_to_drone_offset_x - target_to_drone_offset_x_expected) < tolerance);
+	CHECK(fabsf(target_to_drone_offset_y - target_to_drone_offset_y_expected) < tolerance);
 }
 
 void AutopilotTesterFollowMe::connect(const std::string uri)
@@ -213,17 +189,18 @@ void AutopilotTesterFollowMe::connect(const std::string uri)
 void AutopilotTesterFollowMe::straight_line_test(const float altitude_m, const bool stream_velocity)
 {
 	const unsigned location_update_rate = 1;
-	const float position_tolerance = 6.0f;
+	const float position_tolerance = 5.0f;
 
 	// Start with simulated target on the same plane as drone's home position
 	std::array<float, 3> start_location_ned = get_current_position_ned();
 	FollowTargetSimulator target_simulator(start_location_ned, getHome());
 
-	// Configure Min height of the drone to be "20 meters" above home & Follow direction as "Front
-	// right".
+	// Configure Min height of the drone to be "20 meters" above home and set the
+	// follow angle to 0 deg, which means following from the 'front'
 	FollowMe::Config config;
 	config.min_height_m = altitude_m;
 	config.follow_distance_m = 8.0f;
+	config.follow_angle_deg = 0.0f;
 
 	// Allow some time for mode switch
 	sleep_for(std::chrono::milliseconds(1000));
@@ -250,7 +227,7 @@ void AutopilotTesterFollowMe::straight_line_test(const float altitude_m, const b
 		} else if (i == 5) {
 			// Change config
 			perform_checks = false;
-			config.follow_direction = FollowMe::Config::FollowDirection::Behind;
+			config.follow_angle_deg = 180.0f; // Follow from Behind
 			CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 		} else if (i > 5 && i < 15) {
@@ -264,7 +241,7 @@ void AutopilotTesterFollowMe::straight_line_test(const float altitude_m, const b
 		} else if (i == 20) {
 			// Change config
 			perform_checks = false;
-			config.follow_direction = FollowMe::Config::FollowDirection::Front;
+			config.follow_angle_deg = 0.0f; // Follow from Front
 			CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 		} else if (i > 20 && i < 30) {
@@ -277,7 +254,7 @@ void AutopilotTesterFollowMe::straight_line_test(const float altitude_m, const b
 		} else if (i == 35) {
 			// Change config
 			perform_checks = false;
-			config.follow_direction = FollowMe::Config::FollowDirection::FrontRight;
+			config.follow_angle_deg = 45.0f; // Follow from Front Right
 			CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 		} else if (i > 35 && i < 45) {
@@ -291,7 +268,7 @@ void AutopilotTesterFollowMe::straight_line_test(const float altitude_m, const b
 		} else if (i == 55) {
 			// Change config
 			perform_checks = false;
-			config.follow_direction = FollowMe::Config::FollowDirection::FrontLeft;
+			config.follow_angle_deg = -45.0f; // Follow from Behind-Left
 			CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 		} else if (i > 55 && i < 65) {
@@ -350,7 +327,7 @@ void AutopilotTesterFollowMe::stream_velocity_only()
 
 	// Configure follow-me
 	FollowMe::Config config;
-	config.follow_direction = FollowMe::Config::FollowDirection::Behind;
+	config.follow_angle_deg = 180.0f; // Follow from behind
 	CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 	// Allow some time for mode switch
@@ -395,12 +372,12 @@ void AutopilotTesterFollowMe::rc_override_test(const float altitude_m)
 	std::array<float, 3> start_location_ned = get_current_position_ned();
 	FollowTargetSimulator target_simulator(start_location_ned, getHome());
 
-	// Configure Min height of the drone to be "20 meters" above home & Follow direction as "Front
-	// right".
+	// Configure Min height of the drone to be "20 meters" above home and set the
+	// follow angle to 0 deg, which means following from the 'front' (0 deg)
 	FollowMe::Config config;
 	config.min_height_m = altitude_m;
 	config.follow_distance_m = 8.0f;
-	config.follow_direction = FollowMe::Config::FollowDirection::Behind;
+	config.follow_angle_deg = 0.0f;
 	CHECK(FollowMe::Result::Success == _follow_me->set_config(config));
 
 	// task loop
