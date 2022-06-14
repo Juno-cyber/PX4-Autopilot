@@ -81,7 +81,7 @@
 #include "vehicle_imu/VehicleIMU.hpp"
 
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 # include "vehicle_magnetometer/VehicleMagnetometer.hpp"
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
@@ -188,7 +188,7 @@ private:
 	VehicleAngularVelocity	_vehicle_angular_velocity;
 	VehicleAirData          *_vehicle_air_data{nullptr};
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 	VehicleMagnetometer     *_vehicle_magnetometer {nullptr};
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
@@ -283,7 +283,7 @@ Sensors::Sensors(bool hil_enabled) :
 	InitializeVehicleGPSPosition();
 	InitializeVehicleIMU();
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 	InitializeVehicleMagnetometer();
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
@@ -310,7 +310,7 @@ Sensors::~Sensors()
 		delete _vehicle_gps_position;
 	}
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 
 	if (_vehicle_magnetometer) {
 		_vehicle_magnetometer->Stop();
@@ -413,7 +413,7 @@ int Sensors::parameters_update()
 
 	InitializeVehicleAirData();
 	InitializeVehicleGPSPosition();
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 	InitializeVehicleMagnetometer();
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 	InitializeVehicleOpticalFlow();
@@ -655,7 +655,7 @@ void Sensors::InitializeVehicleIMU()
 	}
 }
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 void Sensors::InitializeVehicleMagnetometer()
 {
 	if (_param_sys_has_mag.get()) {
@@ -814,7 +814,7 @@ int Sensors::print_status()
 {
 	_voted_sensors_update.printStatus();
 
-#if defined(SENSORS_VEHICLE_MAGNETOMETER)
+#if SENSORS_VEHICLE_MAGNETOMETER
 
 	if (_vehicle_magnetometer) {
 		PX4_INFO_RAW("\n");

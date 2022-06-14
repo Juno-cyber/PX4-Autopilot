@@ -10,3 +10,9 @@ menuconfig USER_SENSORS
 	depends on BOARD_PROTECTED && MODULES_SENSORS
 	---help---
 		Put sensors in userspace memory
+
+if MODULES_SENSORS
+    config SENSORS_VEHICLE_MAGNETOMETER
+        bool "Include vehicle magnetometer"
+        default y
+endif #MODULES_SENSORS
