@@ -765,6 +765,10 @@ void Sensors::Run()
 
 	perf_begin(_loop_perf);
 
+#if SENSORS_VEHICLE_OPTICAL_FLOW
+	InitializeVehicleOpticalFlow();
+#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+
 	// check vehicle status for changes to publication state
 	if (_vcontrol_mode_sub.updated()) {
 		vehicle_control_mode_s vcontrol_mode{};
