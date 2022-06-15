@@ -65,6 +65,8 @@ bool VehicleOpticalFlow::Start()
 	_sensor_gyro_sub.registerCallback();
 	_sensor_gyro_sub.set_required_updates(sensor_gyro_s::ORB_QUEUE_LENGTH);
 
+	_sensor_selection_sub.registerCallback();
+
 	ScheduleNow();
 	return true;
 }
@@ -76,6 +78,7 @@ void VehicleOpticalFlow::Stop()
 	// clear all registered callbacks
 	_sensor_flow_sub.unregisterCallback();
 	_sensor_gyro_sub.unregisterCallback();
+	_sensor_selection_sub.unregisterCallback();
 }
 
 void VehicleOpticalFlow::ParametersUpdate()
@@ -95,6 +98,34 @@ void VehicleOpticalFlow::Run()
 	perf_begin(_cycle_perf);
 
 	ParametersUpdate();
+
+	if (_sensor_selection_sub.updated()) {
+
+		sensor_selection_s sensor_selection{};
+		_sensor_selection_sub.copy(&sensor_selection);
+
+		for (uint8_t i = 0; i < MAX_SENSOR_COUNT; i++) {
+			uORB::SubscriptionData<sensor_gyro_s> sensor_gyro_sub{ORB_ID(sensor_gyro), i};
+
+			if (sensor_gyro_sub.advertised()
+			    && (sensor_gyro_sub.get().timestamp != 0)
+			    && (sensor_gyro_sub.get().device_id != 0)
+			    && (hrt_elapsed_time(&sensor_gyro_sub.get().timestamp) < 1_s)) {
+
+				if (sensor_gyro_sub.get().device_id == sensor_selection.gyro_device_id) {
+					if (_sensor_gyro_sub.ChangeInstance(i) && _sensor_gyro_sub.registerCallback()) {
+
+						_gyro_calibration.set_device_id(sensor_gyro_sub.get().device_id);
+						PX4_DEBUG("selecting sensor_gyro:%" PRIu8 " %" PRIu32, i, sensor_gyro_sub.get().device_id);
+						break;
+
+					} else {
+						PX4_ERR("unable to register callback for sensor_gyro:%" PRIu8 " %" PRIu32, i, sensor_gyro_sub.get().device_id);
+					}
+				}
+			}
+		}
+	}
 
 	while (_sensor_gyro_sub.updated()) {
 		const unsigned last_generation = _sensor_gyro_sub.get_last_generation();
@@ -139,7 +170,7 @@ void VehicleOpticalFlow::Run()
 	if (_sensor_flow_sub.update(&sensor_optical_flow)) {
 
 		// only process valid samples
-		if ((sensor_optical_flow.dt > 1000) && (sensor_optical_flow.dt < 60'000)
+		if ((sensor_optical_flow.dt > 1000) && (sensor_optical_flow.dt < UINT16_MAX)
 		    && (sensor_optical_flow.quality > 0)
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[0])
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[1])) {

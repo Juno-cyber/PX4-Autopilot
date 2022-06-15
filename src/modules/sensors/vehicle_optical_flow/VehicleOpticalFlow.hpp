@@ -53,6 +53,7 @@
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/sensor_gyro.h>
 #include <uORB/topics/sensor_optical_flow.h>
+#include <uORB/topics/sensor_selection.h>
 #include <uORB/topics/vehicle_optical_flow.h>
 
 namespace sensors
@@ -90,6 +91,7 @@ private:
 
 	uORB::SubscriptionCallbackWorkItem _sensor_flow_sub{this, ORB_ID(sensor_optical_flow)};
 	uORB::SubscriptionCallbackWorkItem _sensor_gyro_sub{this, ORB_ID(sensor_gyro)};
+	uORB::SubscriptionCallbackWorkItem _sensor_selection_sub{this, ORB_ID(sensor_selection)};
 
 	sensors::IntegratorConing _gyro_integrator{};
 
