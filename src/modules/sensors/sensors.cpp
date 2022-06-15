@@ -210,11 +210,11 @@ private:
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
 #if SENSORS_VEHICLE_OPTICAL_FLOW
-	VehicleOpticalFlow      *_vehicle_optical_flow{nullptr};
+	VehicleOpticalFlow      *_vehicle_optical_flow {nullptr};
 #endif // SENSORS_VEHICLE_OPTICAL_FLOW
 
 #if SENSORS_VEHICLE_GPS_POSITION
-	VehicleGPSPosition	*_vehicle_gps_position{nullptr};
+	VehicleGPSPosition	*_vehicle_gps_position {nullptr};
 #endif // SENSORS_VEHICLE_GPS_POSITION
 
 	VehicleIMU      *_vehicle_imu_list[MAX_SENSOR_COUNT] {};
@@ -334,24 +334,30 @@ Sensors::~Sensors()
 	}
 
 #if SENSORS_VEHICLE_GPS_POSITION
+
 	if (_vehicle_gps_position) {
 		_vehicle_gps_position->Stop();
 		delete _vehicle_gps_position;
 	}
+
 #endif // SENSORS_VEHICLE_GPS_POSITION
 
 #if SENSORS_VEHICLE_MAGNETOMETER
+
 	if (_vehicle_magnetometer) {
 		_vehicle_magnetometer->Stop();
 		delete _vehicle_magnetometer;
 	}
+
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
 #if SENSORS_VEHICLE_OPTICAL_FLOW
+
 	if (_vehicle_optical_flow) {
 		_vehicle_optical_flow->Stop();
 		delete _vehicle_optical_flow;
 	}
+
 #endif // SENSORS_VEHICLE_OPTICAL_FLOW
 
 	for (auto &vehicle_imu : _vehicle_imu_list) {
@@ -759,10 +765,12 @@ void Sensors::Run()
 		bool n_gps_updated = false;
 #if SENSORS_VEHICLE_GPS_POSITION
 		const int n_gps   = orb_group_count(ORB_ID(sensor_gps));
+
 		if (n_gps != _n_gps) {
 			_n_gps = n_gps;
 			n_gps_updated = true;
 		}
+
 #endif // SENSORS_VEHICLE_GPS_POSITION
 
 		const int n_gyro  = orb_group_count(ORB_ID(sensor_gyro));
@@ -864,17 +872,21 @@ int Sensors::print_status()
 	_voted_sensors_update.printStatus();
 
 #if SENSORS_VEHICLE_MAGNETOMETER
+
 	if (_vehicle_magnetometer) {
 		PX4_INFO_RAW("\n");
 		_vehicle_magnetometer->PrintStatus();
 	}
+
 #endif // SENSORS_VEHICLE_MAGNETOMETER
 
 #if SENSORS_VEHICLE_OPTICAL_FLOW
+
 	if (_vehicle_optical_flow) {
 		PX4_INFO_RAW("\n");
 		_vehicle_optical_flow->PrintStatus();
 	}
+
 #endif // SENSORS_VEHICLE_OPTICAL_FLOW
 
 	if (_vehicle_air_data) {
@@ -893,10 +905,12 @@ int Sensors::print_status()
 	_vehicle_angular_velocity.PrintStatus();
 
 #if SENSORS_VEHICLE_GPS_POSITION
+
 	if (_vehicle_gps_position) {
 		PX4_INFO_RAW("\n");
 		_vehicle_gps_position->PrintStatus();
 	}
+
 #endif // SENSORS_VEHICLE_GPS_POSITION
 
 	PX4_INFO_RAW("\n");
