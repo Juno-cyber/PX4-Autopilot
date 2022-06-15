@@ -110,5 +110,12 @@ private:
 	RingBuffer<gyroSample, 255> _gryo_buffer{};
 
 	float _range{NAN};
+
+	DEFINE_PARAMETERS(
+		(ParamInt<px4::params::SENS_FLOW_ROT>) _param_sens_flow_rot,
+		(ParamFloat<px4::params::SENS_FLOW_MINHGT>) _param_sens_flow_minhgt,
+		(ParamFloat<px4::params::SENS_FLOW_MAXHGT>) _param_sens_flow_maxhgt,
+		(ParamFloat<px4::params::SENS_FLOW_MAXR>) _param_sens_flow_maxr
+	)
 };
 }; // namespace sensors

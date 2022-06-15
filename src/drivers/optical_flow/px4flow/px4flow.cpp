@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2019, 2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -41,8 +41,6 @@
 
 #include <drivers/device/i2c.h>
 #include <drivers/drv_hrt.h>
-#include <lib/conversion/rotation.h>
-#include <lib/parameters/param.h>
 #include <lib/perf/perf_counter.h>
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/defines.h>
@@ -166,44 +164,6 @@ PX4FLOW::init()
 	/* sensor is ok, but we don't really know if it is within range */
 	_sensor_ok = true;
 
-	/* get yaw rotation from sensor frame to body frame */
-	param_t rot = param_find("SENS_FLOW_ROT");
-
-	if (rot != PARAM_INVALID) {
-		int32_t val = 6; // the recommended installation for the flow sensor is with the Y sensor axis forward
-		param_get(rot, &val);
-
-		_sensor_rotation = (enum Rotation)val;
-	}
-
-	/* get operational limits of the sensor */
-	param_t hmin = param_find("SENS_FLOW_MINHGT");
-
-	if (hmin != PARAM_INVALID) {
-		float val = 0.7;
-		param_get(hmin, &val);
-
-		_sensor_min_range = val;
-	}
-
-	param_t hmax = param_find("SENS_FLOW_MAXHGT");
-
-	if (hmax != PARAM_INVALID) {
-		float val = 3.0;
-		param_get(hmax, &val);
-
-		_sensor_max_range = val;
-	}
-
-	param_t ratemax = param_find("SENS_FLOW_MAXR");
-
-	if (ratemax != PARAM_INVALID) {
-		float val = 2.5;
-		param_get(ratemax, &val);
-
-		_sensor_max_flow_rate = val;
-	}
-
 	start();
 
 	return ret;
@@ -282,6 +242,7 @@ PX4FLOW::collect()
 	DeviceId device_id;
 	device_id.devid = get_device_id();
 	device_id.devid_s.devtype = DRV_DIST_DEVTYPE_PX4FLOW;
+	device_id.devid_s.address = get_i2c_address();
 
 	sensor_optical_flow_s report{};
 
@@ -302,17 +263,15 @@ PX4FLOW::collect()
 	report.delta_angle[1] = static_cast<float>(_frame_integral.gyro_y_rate_integral) / 10000.0f; // convert to radians
 	report.delta_angle[2] = static_cast<float>(_frame_integral.gyro_z_rate_integral) / 10000.0f; // convert to radians
 
-	//report.time_since_last_sonar_update = _frame_integral.sonar_timestamp;//microseconds
-	//report.gyro_temperature = _frame_integral.gyro_temperature;//Temperature * 100 in centi-degrees Celsius
-	report.max_flow_rate = _sensor_max_flow_rate;
-	report.min_ground_distance = _sensor_min_range;
-	report.max_ground_distance = _sensor_max_range;
-
 	/* rotate measurements in yaw from sensor frame to body frame according to parameter SENS_FLOW_ROT */
 	float zeroval = 0.0f;
 
 	rotate_3f(_sensor_rotation, report.pixel_flow[0], report.pixel_flow[1], zeroval);
 	rotate_3f(_sensor_rotation, report.delta_angle[0], report.delta_angle[1], report.delta_angle[2]);
+
+	report.max_flow_rate = 2.5f;
+	report.min_ground_distance = 0.7f;
+	report.max_ground_distance = 3.f;
 
 	report.timestamp = hrt_absolute_time();
 	_sensor_optical_flow_pub.publish(report);
@@ -422,13 +381,11 @@ px4flow_main(int argc, char *argv[])
 		}
 
 		return ThisDriver::module_start(cli, iterator);
-	}
 
-	if (!strcmp(verb, "stop")) {
+	} else if (!strcmp(verb, "stop")) {
 		return ThisDriver::module_stop(iterator);
-	}
 
-	if (!strcmp(verb, "status")) {
+	} else if (!strcmp(verb, "status")) {
 		return ThisDriver::module_status(iterator);
 	}
 

@@ -89,10 +89,6 @@ MavlinkReceiver::MavlinkReceiver(Mavlink *parent) :
 	_parameters_manager(parent),
 	_mavlink_timesync(parent)
 {
-	_handle_sens_flow_maxhgt = param_find("SENS_FLOW_MAXHGT");
-	_handle_sens_flow_maxr = param_find("SENS_FLOW_MAXR");
-	_handle_sens_flow_minhgt = param_find("SENS_FLOW_MINHGT");
-	_handle_sens_flow_rot = param_find("SENS_FLOW_ROT");
 	_handle_ekf2_min_rng = param_find("EKF2_MIN_RNG");
 	_handle_ekf2_rng_a_hmax = param_find("EKF2_RNG_A_HMAX");
 }
@@ -804,9 +800,6 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 	device_id.devid_s.devtype = DRV_DIST_DEVTYPE_MAVLINK;
 	device_id.devid_s.address = msg->sysid;
 
-	/* read flow sensor parameters */
-	const Rotation flow_rot = (Rotation)_param_sens_flow_rot;
-
 	sensor_optical_flow_s f{};
 
 	f.timestamp_sample = hrt_absolute_time();
@@ -815,11 +808,7 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 	f.pixel_flow[0] = flow.integrated_x;
 	f.pixel_flow[1] = flow.integrated_y;
 
-	/* rotate measurements according to parameter */
-	float zero_val = 0.0f;
-	rotate_3f(flow_rot, f.pixel_flow[0], f.pixel_flow[1], zero_val);
-
-	f.dt  = flow.integration_time_us;
+	f.dt = flow.integration_time_us;
 	f.quality = flow.quality;
 
 	if (PX4_ISFINITE(flow.integrated_xgyro) && PX4_ISFINITE(flow.integrated_ygyro) && PX4_ISFINITE(flow.integrated_zgyro)) {
@@ -827,22 +816,20 @@ MavlinkReceiver::handle_message_optical_flow_rad(mavlink_message_t *msg)
 		f.delta_angle[1] = flow.integrated_ygyro;
 		f.delta_angle[2] = flow.integrated_zgyro;
 		f.delta_angle_available = true;
-
-		rotate_3f(flow_rot, f.delta_angle[0], f.delta_angle[1], f.delta_angle[2]);
 	}
 
 	//f.ground_distance_m = flow.distance;
 
-	f.max_flow_rate       = _param_sens_flow_maxr;
-	f.min_ground_distance = _param_sens_flow_minhgt;
-	f.max_ground_distance = _param_sens_flow_maxhgt;
+	f.max_flow_rate       = NAN;
+	f.min_ground_distance = NAN;
+	f.max_ground_distance = NAN;
 
 	f.timestamp = hrt_absolute_time();
 
 	_sensor_optical_flow_pub.publish(f);
 
 	/* Use distance value for distance sensor topic */
-	if (flow.distance > 0.0f) { // negative values signal invalid data
+	if (PX4_ISFINITE(flow.distance) && (flow.distance > 0.0f)) { // negative values signal invalid data
 
 		distance_sensor_s d{};
 		d.min_distance = _param_ekf2_min_rng;
@@ -871,9 +858,6 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 	device_id.devid_s.devtype = DRV_DIST_DEVTYPE_MAVLINK;
 	device_id.devid_s.address = msg->sysid;
 
-	/* read flow sensor parameters */
-	const Rotation flow_rot = (Rotation)_param_sens_flow_rot;
-
 	sensor_optical_flow_s f{};
 
 	f.timestamp_sample = hrt_absolute_time();
@@ -881,10 +865,6 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 
 	f.pixel_flow[0] = flow.integrated_x;
 	f.pixel_flow[1] = flow.integrated_y;
-
-	/* rotate measurements according to parameter */
-	float zero_val = 0.0f;
-	rotate_3f(flow_rot, f.pixel_flow[0], f.pixel_flow[1], zero_val);
 
 	f.dt = flow.integration_time_us;
 	f.quality = flow.quality;
@@ -894,21 +874,17 @@ MavlinkReceiver::handle_message_hil_optical_flow(mavlink_message_t *msg)
 		f.delta_angle[1] = flow.integrated_ygyro;
 		f.delta_angle[2] = flow.integrated_zgyro;
 		f.delta_angle_available = true;
-
-		rotate_3f(flow_rot, f.delta_angle[0], f.delta_angle[1], f.delta_angle[2]);
 	}
 
 	//f.ground_distance_m = flow.distance;
 
-	f.max_flow_rate       = _param_sens_flow_maxr;
-	f.min_ground_distance = _param_sens_flow_minhgt;
-	f.max_ground_distance = _param_sens_flow_maxhgt;
+	f.max_flow_rate       = NAN;
+	f.min_ground_distance = NAN;
+	f.max_ground_distance = NAN;
 
 	f.timestamp = hrt_absolute_time();
 
 	_sensor_optical_flow_pub.publish(f);
-
-
 
 
 	/* Use distance value for distance sensor topic */
@@ -3504,22 +3480,6 @@ MavlinkReceiver::updateParams()
 {
 	// update parameters from storage
 	ModuleParams::updateParams();
-
-	if (_handle_sens_flow_maxhgt != PARAM_INVALID) {
-		param_get(_handle_sens_flow_maxhgt, &_param_sens_flow_maxhgt);
-	}
-
-	if (_handle_sens_flow_maxr != PARAM_INVALID) {
-		param_get(_handle_sens_flow_maxr, &_param_sens_flow_maxr);
-	}
-
-	if (_handle_sens_flow_minhgt != PARAM_INVALID) {
-		param_get(_handle_sens_flow_minhgt, &_param_sens_flow_minhgt);
-	}
-
-	if (_handle_sens_flow_rot != PARAM_INVALID) {
-		param_get(_handle_sens_flow_rot, &_param_sens_flow_rot);
-	}
 
 	if (_handle_ekf2_min_rng != PARAM_INVALID) {
 		param_get(_handle_ekf2_min_rng, &_param_ekf2_min_rng);

@@ -625,19 +625,20 @@ void PAW3902::RegisterWrite(uint8_t reg, uint8_t data)
 
 void PAW3902::RunImpl()
 {
-	const hrt_abstime now = hrt_absolute_time();
-
 	perf_begin(_cycle_perf);
 	perf_count(_interval_perf);
 
+	const hrt_abstime now = hrt_absolute_time();
+
 	// force reconfigure if we haven't received valid data for quite some time
 	if ((now > _last_good_data + RESET_TIMEOUT_US) && (now > _last_reset + RESET_TIMEOUT_US)) {
+		PX4_ERR("no valid data for %.3f seconds, resetting", 1e-6 * (now - _last_good_data));
 		Configure();
 		perf_end(_cycle_perf);
 		return;
 	}
 
-	hrt_abstime timestamp_sample = 0;
+	hrt_abstime timestamp_sample = now;
 
 	if (_data_ready_interrupt_enabled) {
 		// scheduled from interrupt if _drdy_timestamp_sample was set as expected
@@ -659,10 +660,6 @@ void PAW3902::RunImpl()
 		BURST_TRANSFER data{};
 	} buf{};
 	static_assert(sizeof(buf) == (12 + 1));
-
-	if (timestamp_sample == 0) {
-		timestamp_sample = hrt_absolute_time();
-	}
 
 	if (transfer((uint8_t *)&buf, (uint8_t *)&buf, sizeof(buf)) != 0) {
 		perf_end(_cycle_perf);
@@ -800,9 +797,9 @@ void PAW3902::RunImpl()
 		report.quality = buf.data.SQUAL;
 
 		// set specs according to datasheet
-		report.max_flow_rate = 7.4f;          // Datasheet: 7.4 rad/s
-		report.min_ground_distance = 0.08f;   // Datasheet: 80mm
-		report.max_ground_distance = 1000.0f; // Datasheet: infinity
+		report.max_flow_rate = 7.4f;           // Datasheet: 7.4 rad/s
+		report.min_ground_distance = 0.08f;    // Datasheet: 80mm
+		report.max_ground_distance = INFINITY; // Datasheet: infinity
 
 		switch (_mode) {
 		case Mode::Bright:

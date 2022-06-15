@@ -84,9 +84,10 @@ void UavcanFlowBridge::flow_sub_cb(const uavcan::ReceivedDataStructure<com::hex:
 		flow.delta_angle[2] = NAN;
 	}
 
-	flow.max_flow_rate = 5.0f;       // Datasheet: 7.4 rad/s
-	flow.min_ground_distance = 0.1f; // Datasheet: 80mm
-	flow.max_ground_distance = 30.0f; // Datasheet: infinity
+	flow.max_flow_rate = NAN;
+	flow.min_ground_distance = NAN;
+	flow.max_ground_distance = NAN;
+
 	flow.timestamp = hrt_absolute_time();
 
 	publish(msg.getSrcNodeID().get(), &flow);

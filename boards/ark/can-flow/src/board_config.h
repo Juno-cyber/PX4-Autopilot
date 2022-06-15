@@ -43,10 +43,6 @@
 #include <nuttx/compiler.h>
 #include <stdint.h>
 
-#define SENSORS_VEHICLE_AIR_DATA 0
-#define SENSORS_VEHICLE_GPS_POSITION 0
-#define SENSORS_VEHICLE_MAGNETOMETER 0
-
 /* CAN  Silent mode control */
 #define GPIO_CAN1_SILENT_S0   /* PA9  */ (GPIO_OUTPUT|GPIO_PUSHPULL|GPIO_SPEED_2MHz|GPIO_OUTPUT_CLEAR|GPIO_PORTA|GPIO_PIN9)
 

@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2021 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -76,39 +76,25 @@
 #include "voted_sensors_update.h"
 #include "vehicle_acceleration/VehicleAcceleration.hpp"
 #include "vehicle_angular_velocity/VehicleAngularVelocity.hpp"
+
+
 #include "vehicle_imu/VehicleIMU.hpp"
 
-#ifndef SENSORS_VEHICLE_AIR_DATA
-#define SENSORS_VEHICLE_AIR_DATA 1
-#endif
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
+# include "vehicle_air_data/VehicleAirData.hpp"
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
 
-#ifndef SENSORS_VEHICLE_GPS_POSITION
-#define SENSORS_VEHICLE_GPS_POSITION 1
-#endif
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
+# include "vehicle_gps_position/VehicleGPSPosition.hpp"
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
-#ifndef SENSORS_VEHICLE_MAGNETOMETER
-#define SENSORS_VEHICLE_MAGNETOMETER 1
-#endif
-
-#ifndef SENSORS_VEHICLE_OPTICAL_FLOW
-#define SENSORS_VEHICLE_OPTICAL_FLOW 1
-#endif
-
-#if SENSORS_VEHICLE_AIR_DATA
-#include "vehicle_air_data/VehicleAirData.hpp"
-#endif // SENSORS_VEHICLE_AIR_DATA
-
-#if SENSORS_VEHICLE_GPS_POSITION
-#include "vehicle_gps_position/VehicleGPSPosition.hpp"
-#endif // SENSORS_VEHICLE_GPS_POSITION
-
-#if SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
 # include "vehicle_magnetometer/VehicleMagnetometer.hpp"
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
-#include "vehicle_optical_flow/VehicleOpticalFlow.hpp"
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
+# include "vehicle_optical_flow/VehicleOpticalFlow.hpp"
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
 using namespace sensors;
 using namespace time_literals;
@@ -210,21 +196,21 @@ private:
 	VehicleAcceleration	_vehicle_acceleration;
 	VehicleAngularVelocity	_vehicle_angular_velocity;
 
-#if SENSORS_VEHICLE_AIR_DATA
-	VehicleAirData          *_vehicle_air_data{nullptr};
-#endif // SENSORS_VEHICLE_AIR_DATA
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
+	VehicleAirData *_vehicle_air_data {nullptr};
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
 
-#if SENSORS_VEHICLE_MAGNETOMETER
-	VehicleMagnetometer     *_vehicle_magnetometer {nullptr};
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
+	VehicleMagnetometer *_vehicle_magnetometer {nullptr};
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
-	VehicleOpticalFlow      *_vehicle_optical_flow {nullptr};
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
+	VehicleOpticalFlow *_vehicle_optical_flow {nullptr};
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
-#if SENSORS_VEHICLE_GPS_POSITION
-	VehicleGPSPosition	*_vehicle_gps_position {nullptr};
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
+	VehicleGPSPosition *_vehicle_gps_position {nullptr};
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
 	VehicleIMU      *_vehicle_imu_list[MAX_SENSOR_COUNT] {};
 
@@ -233,6 +219,7 @@ private:
 	uint8_t _n_gps{0};
 	uint8_t _n_gyro{0};
 	uint8_t _n_mag{0};
+	uint8_t _n_optical_flow{0};
 
 	/**
 	 * Update our local parameter cache.
@@ -310,23 +297,7 @@ Sensors::Sensors(bool hil_enabled) :
 
 	parameters_update();
 
-#if SENSORS_VEHICLE_AIR_DATA
-	InitializeVehicleAirData();
-#endif // SENSORS_VEHICLE_AIR_DATA
-
-#if SENSORS_VEHICLE_GPS_POSITION
-	InitializeVehicleGPSPosition();
-#endif // SENSORS_VEHICLE_GPS_POSITION
-
 	InitializeVehicleIMU();
-
-#if SENSORS_VEHICLE_MAGNETOMETER
-	InitializeVehicleMagnetometer();
-#endif // SENSORS_VEHICLE_MAGNETOMETER
-
-#if SENSORS_VEHICLE_OPTICAL_FLOW
-	InitializeVehicleOpticalFlow();
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
 }
 
 Sensors::~Sensors()
@@ -339,39 +310,41 @@ Sensors::~Sensors()
 	_vehicle_acceleration.Stop();
 	_vehicle_angular_velocity.Stop();
 
-#if SENSORS_VEHICLE_AIR_DATA
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
+
 	if (_vehicle_air_data) {
 		_vehicle_air_data->Stop();
 		delete _vehicle_air_data;
 	}
-#endif // SENSORS_VEHICLE_AIR_DATA
 
-#if SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
+
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
 
 	if (_vehicle_gps_position) {
 		_vehicle_gps_position->Stop();
 		delete _vehicle_gps_position;
 	}
 
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
-#if SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
 
 	if (_vehicle_magnetometer) {
 		_vehicle_magnetometer->Stop();
 		delete _vehicle_magnetometer;
 	}
 
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
 
 	if (_vehicle_optical_flow) {
 		_vehicle_optical_flow->Stop();
 		delete _vehicle_optical_flow;
 	}
 
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
 	for (auto &vehicle_imu : _vehicle_imu_list) {
 		if (vehicle_imu) {
@@ -460,26 +433,25 @@ int Sensors::parameters_update()
 		}
 	}
 
-#if SENSORS_VEHICLE_AIR_DATA
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
 	InitializeVehicleAirData();
-#endif // SENSORS_VEHICLE_AIR_DATA
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
 
-#if SENSORS_VEHICLE_GPS_POSITION
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
 	InitializeVehicleGPSPosition();
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
-#if SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
 	InitializeVehicleMagnetometer();
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
 	InitializeVehicleOpticalFlow();
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
 	return PX4_OK;
 }
 
-#if SENSORS_VEHICLE_AIR_DATA
 void Sensors::diff_pres_poll()
 {
 	differential_pressure_s diff_pres{};
@@ -586,7 +558,6 @@ void Sensors::diff_pres_poll()
 		}
 	}
 }
-#endif // SENSORS_VEHICLE_AIR_DATA
 
 void
 Sensors::parameter_update_poll(bool forced)
@@ -654,7 +625,7 @@ void Sensors::adc_poll()
 #endif /* ADC_AIRSPEED_VOLTAGE_CHANNEL */
 }
 
-#if SENSORS_VEHICLE_AIR_DATA
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
 void Sensors::InitializeVehicleAirData()
 {
 	if (_param_sys_has_baro.get()) {
@@ -667,9 +638,9 @@ void Sensors::InitializeVehicleAirData()
 		}
 	}
 }
-#endif // SENSORS_VEHICLE_AIR_DATA
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
 
-#if SENSORS_VEHICLE_GPS_POSITION
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
 void Sensors::InitializeVehicleGPSPosition()
 {
 	if (_param_sys_has_gps.get()) {
@@ -682,7 +653,7 @@ void Sensors::InitializeVehicleGPSPosition()
 		}
 	}
 }
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
 void Sensors::InitializeVehicleIMU()
 {
@@ -719,7 +690,7 @@ void Sensors::InitializeVehicleIMU()
 	}
 }
 
-#if SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
 void Sensors::InitializeVehicleMagnetometer()
 {
 	if (_param_sys_has_mag.get()) {
@@ -732,9 +703,9 @@ void Sensors::InitializeVehicleMagnetometer()
 		}
 	}
 }
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
 void Sensors::InitializeVehicleOpticalFlow()
 {
 	if (_vehicle_optical_flow == nullptr) {
@@ -749,7 +720,7 @@ void Sensors::InitializeVehicleOpticalFlow()
 		}
 	}
 }
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
 void Sensors::Run()
 {
@@ -765,10 +736,6 @@ void Sensors::Run()
 
 	perf_begin(_loop_perf);
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
-	InitializeVehicleOpticalFlow();
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
-
 	// check vehicle status for changes to publication state
 	if (_vcontrol_mode_sub.updated()) {
 		vehicle_control_mode_s vcontrol_mode{};
@@ -782,24 +749,34 @@ void Sensors::Run()
 	// when not adding sensors poll for param updates
 	if ((!_armed && hrt_elapsed_time(&_last_config_update) > 500_ms) || (_last_config_update == 0)) {
 
-		const int n_accel = orb_group_count(ORB_ID(sensor_accel));
-		const int n_baro  = orb_group_count(ORB_ID(sensor_baro));
+		bool updated = false;
 
-		bool n_gps_updated = false;
-#if SENSORS_VEHICLE_GPS_POSITION
-		const int n_gps   = orb_group_count(ORB_ID(sensor_gps));
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
+		const int n_gps = orb_group_count(ORB_ID(sensor_gps));
 
 		if (n_gps != _n_gps) {
 			_n_gps = n_gps;
-			n_gps_updated = true;
+			updated = true;
 		}
 
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
+		const int n_optical_flow = orb_group_count(ORB_ID(sensor_optical_flow));
+
+		if (n_optical_flow != _n_optical_flow) {
+			_n_optical_flow = n_optical_flow;
+			updated = true;
+		}
+
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
+
+		const int n_accel = orb_group_count(ORB_ID(sensor_accel));
+		const int n_baro  = orb_group_count(ORB_ID(sensor_baro));
 		const int n_gyro  = orb_group_count(ORB_ID(sensor_gyro));
 		const int n_mag   = orb_group_count(ORB_ID(sensor_mag));
 
-		if ((n_accel != _n_accel) || (n_baro != _n_baro) || (n_gyro != _n_gyro) || (n_mag != _n_mag) || n_gps_updated) {
+		if ((n_accel != _n_accel) || (n_baro != _n_baro) || (n_gyro != _n_gyro) || (n_mag != _n_mag) || updated) {
 			_n_accel = n_accel;
 			_n_baro = n_baro;
 			_n_gyro = n_gyro;
@@ -831,9 +808,7 @@ void Sensors::Run()
 	// check analog airspeed
 	adc_poll();
 
-#if SENSORS_VEHICLE_AIR_DATA
 	diff_pres_poll();
-#endif // SENSORS_VEHICLE_AIR_DATA
 
 	// backup schedule as a watchdog timeout
 	ScheduleDelayed(10_ms);
@@ -896,30 +871,32 @@ int Sensors::print_status()
 {
 	_voted_sensors_update.printStatus();
 
-#if SENSORS_VEHICLE_MAGNETOMETER
+#if defined(CONFIG_SENSORS_VEHICLE_MAGNETOMETER)
 
 	if (_vehicle_magnetometer) {
 		PX4_INFO_RAW("\n");
 		_vehicle_magnetometer->PrintStatus();
 	}
 
-#endif // SENSORS_VEHICLE_MAGNETOMETER
+#endif // CONFIG_SENSORS_VEHICLE_MAGNETOMETER
 
-#if SENSORS_VEHICLE_OPTICAL_FLOW
+#if defined(CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW)
 
 	if (_vehicle_optical_flow) {
 		PX4_INFO_RAW("\n");
 		_vehicle_optical_flow->PrintStatus();
 	}
 
-#endif // SENSORS_VEHICLE_OPTICAL_FLOW
+#endif // CONFIG_SENSORS_VEHICLE_OPTICAL_FLOW
 
-#if SENSORS_VEHICLE_AIR_DATA
+#if defined(CONFIG_SENSORS_VEHICLE_AIR_DATA)
+
 	if (_vehicle_air_data) {
 		PX4_INFO_RAW("\n");
 		_vehicle_air_data->PrintStatus();
 	}
-#endif // SENSORS_VEHICLE_AIR_DATA
+
+#endif // CONFIG_SENSORS_VEHICLE_AIR_DATA
 
 	PX4_INFO_RAW("\n");
 	PX4_INFO_RAW("Airspeed status:\n");
@@ -931,14 +908,14 @@ int Sensors::print_status()
 	PX4_INFO_RAW("\n");
 	_vehicle_angular_velocity.PrintStatus();
 
-#if SENSORS_VEHICLE_GPS_POSITION
+#if defined(CONFIG_SENSORS_VEHICLE_GPS_POSITION)
 
 	if (_vehicle_gps_position) {
 		PX4_INFO_RAW("\n");
 		_vehicle_gps_position->PrintStatus();
 	}
 
-#endif // SENSORS_VEHICLE_GPS_POSITION
+#endif // CONFIG_SENSORS_VEHICLE_GPS_POSITION
 
 	PX4_INFO_RAW("\n");
 

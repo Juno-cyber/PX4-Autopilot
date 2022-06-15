@@ -175,6 +175,8 @@ void VehicleOpticalFlow::Run()
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[0])
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[1])) {
 
+
+
 			gyroSample gyro_sample;
 			const hrt_abstime timestamp_oldest = sensor_optical_flow.timestamp_sample - lroundf(sensor_optical_flow.dt);
 			const hrt_abstime timestamp_newest = sensor_optical_flow.timestamp;
@@ -190,6 +192,12 @@ void VehicleOpticalFlow::Run()
 					break;
 				}
 			}
+
+
+			// rotate (SENS_FLOW_ROT)
+			float zeroval = 0.f;
+			rotate_3f((enum Rotation)_param_sens_flow_rot.get(), sensor_optical_flow.pixel_flow[0],
+				  sensor_optical_flow.pixel_flow[1], zeroval);
 
 
 			vehicle_optical_flow_s vehicle_optical_flow{};
@@ -210,6 +218,8 @@ void VehicleOpticalFlow::Run()
 			    && PX4_ISFINITE(sensor_optical_flow.delta_angle[2])
 			   ) {
 				// passthrough integrated gyro if available
+				rotate_3f((enum Rotation)_param_sens_flow_rot.get(), sensor_optical_flow.delta_angle[0],
+					  sensor_optical_flow.delta_angle[1], sensor_optical_flow.delta_angle[2]);
 				vehicle_optical_flow.gyro_x_rate_integral = sensor_optical_flow.delta_angle[0];
 				vehicle_optical_flow.gyro_y_rate_integral = sensor_optical_flow.delta_angle[1];
 				vehicle_optical_flow.gyro_z_rate_integral = sensor_optical_flow.delta_angle[2];
@@ -255,14 +265,40 @@ void VehicleOpticalFlow::Run()
 				}
 			}
 
-			vehicle_optical_flow.max_flow_rate = sensor_optical_flow.max_flow_rate;
-			vehicle_optical_flow.min_ground_distance = sensor_optical_flow.min_ground_distance;
-			vehicle_optical_flow.max_ground_distance = sensor_optical_flow.max_ground_distance;
+			// SENS_FLOW_MAXR
+			if (PX4_ISFINITE(sensor_optical_flow.max_flow_rate)
+			    && (sensor_optical_flow.max_flow_rate <= _param_sens_flow_maxr.get())) {
+
+				vehicle_optical_flow.max_flow_rate = sensor_optical_flow.max_flow_rate;
+
+			} else {
+				vehicle_optical_flow.max_flow_rate = _param_sens_flow_maxr.get();
+			}
+
+			// SENS_FLOW_MINHGT
+			if (PX4_ISFINITE(sensor_optical_flow.min_ground_distance)
+			    && (sensor_optical_flow.min_ground_distance >= _param_sens_flow_minhgt.get())) {
+
+				vehicle_optical_flow.min_ground_distance = sensor_optical_flow.min_ground_distance;
+
+			} else {
+				vehicle_optical_flow.min_ground_distance = _param_sens_flow_minhgt.get();
+			}
+
+			// SENS_FLOW_MAXHGT
+			if (PX4_ISFINITE(sensor_optical_flow.max_ground_distance)
+			    && (sensor_optical_flow.max_ground_distance <= _param_sens_flow_maxhgt.get())) {
+
+				vehicle_optical_flow.max_ground_distance = sensor_optical_flow.max_ground_distance;
+
+			} else {
+				vehicle_optical_flow.max_ground_distance = _param_sens_flow_maxhgt.get();
+			}
+
 
 			vehicle_optical_flow.timestamp = hrt_absolute_time();
 
 			_vehicle_optical_flow_pub.publish(vehicle_optical_flow);
-
 		}
 	}
 

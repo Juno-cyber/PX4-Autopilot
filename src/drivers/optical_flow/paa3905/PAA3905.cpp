@@ -581,9 +581,9 @@ void PAA3905::RunImpl()
 		report.quality = buf.data.SQUAL;
 
 		// set specs according to datasheet
-		report.max_flow_rate = 7.4f;          // Datasheet: 7.4 rad/s
-		report.min_ground_distance = 0.08f;   // Datasheet: 80mm
-		report.max_ground_distance = 1000.0f; // Datasheet: infinity
+		report.max_flow_rate = 7.4f;           // Datasheet: 7.4 rad/s
+		report.min_ground_distance = 0.08f;    // Datasheet: 80mm
+		report.max_ground_distance = INFINITY; // Datasheet: infinity
 
 		switch (_mode) {
 		case Mode::Bright:

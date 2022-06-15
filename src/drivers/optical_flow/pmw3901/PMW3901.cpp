@@ -456,9 +456,9 @@ void PMW3901::RunImpl()
 		report.quality = buf.data.SQUAL;
 
 		// set specs according to datasheet
-		report.max_flow_rate = 7.4f;          // Datasheet: 7.4 rad/s
-		report.min_ground_distance = 0.08f;   // Datasheet: 80mm
-		report.max_ground_distance = 1000.0f; // Datasheet: infinity
+		report.max_flow_rate = 7.4f;           // Datasheet: 7.4 rad/s
+		report.min_ground_distance = 0.08f;    // Datasheet: 80mm
+		report.max_ground_distance = INFINITY; // Datasheet: infinity
 
 		if (motion_detected) {
 			// only populate flow if data valid (motion and quality > 0)

@@ -1320,14 +1320,6 @@ int Simulator::publish_flow_topic(const mavlink_hil_optical_flow_t *flow_mavlink
 	flow.pixel_flow[0] = flow_mavlink->integrated_x;
 	flow.pixel_flow[1] = flow_mavlink->integrated_y;
 
-	/* rotate measurements according to parameter */
-	int32_t flow_rot_int;
-	param_get(param_find("SENS_FLOW_ROT"), &flow_rot_int);
-	const enum Rotation flow_rot = (Rotation)flow_rot_int;
-
-	float zeroval = 0.0f;
-	rotate_3f(flow_rot, flow.pixel_flow[0], flow.pixel_flow[1], zeroval);
-
 	flow.dt = flow_mavlink->integration_time_us;
 
 	flow.quality = flow_mavlink->quality;
@@ -1341,21 +1333,12 @@ int Simulator::publish_flow_topic(const mavlink_hil_optical_flow_t *flow_mavlink
 		flow.delta_angle[2] = flow_mavlink->integrated_zgyro;
 
 		flow.delta_angle_available = true;
-
-		rotate_3f(flow_rot, flow.delta_angle[0], flow.delta_angle[1], flow.delta_angle[2]);
 	}
 
 	/* fill in sensor limits */
-	float flow_rate_max;
-	param_get(param_find("SENS_FLOW_MAXR"), &flow_rate_max);
-	float flow_min_hgt;
-	param_get(param_find("SENS_FLOW_MINHGT"), &flow_min_hgt);
-	float flow_max_hgt;
-	param_get(param_find("SENS_FLOW_MAXHGT"), &flow_max_hgt);
-
-	flow.max_flow_rate = flow_rate_max;
-	flow.min_ground_distance = flow_min_hgt;
-	flow.max_ground_distance = flow_max_hgt;
+	flow.max_flow_rate = NAN;
+	flow.min_ground_distance = NAN;
+	flow.max_ground_distance = NAN;
 
 	flow.timestamp = hrt_absolute_time();
 	_sensor_optical_flow_pub.publish(flow);

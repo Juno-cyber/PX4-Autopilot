@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2019-2022 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -71,15 +71,15 @@ public:
 	void print_info();
 
 private:
-	char                     _port[20];
-	Rotation            	 _rotation;
-	int                      _cycle_interval;
-	int                      _fd;
-	char                     _linebuf[5];
-	unsigned                 _linebuf_index;
-	THONEFLOW_PARSE_STATE    _parse_state;
+	char                     _port[20] {};
+	Rotation            	 _rotation{ROTATION_NONE};
+	int                      _cycle_interval{10526};
+	int                      _fd{-1};
+	char                     _linebuf[5] {};
+	unsigned                 _linebuf_index{0};
+	THONEFLOW_PARSE_STATE    _parse_state{THONEFLOW_PARSE_STATE0_UNSYNC};
 
-	hrt_abstime              _last_read;
+	hrt_abstime              _last_read{0};
 
 	uORB::PublicationMulti<sensor_optical_flow_s> _sensor_optical_flow_pub{ORB_ID(sensor_optical_flow)};
 
@@ -106,13 +106,7 @@ private:
 };
 
 Thoneflow::Thoneflow(const char *port) :
-	ScheduledWorkItem(MODULE_NAME, px4::serial_port_to_wq(port)),
-	_rotation(Rotation(0)),
-	_cycle_interval(10526),
-	_fd(-1),
-	_linebuf_index(0),
-	_parse_state(THONEFLOW_PARSE_STATE0_UNSYNC),
-	_last_read(0)
+	ScheduledWorkItem(MODULE_NAME, px4::serial_port_to_wq(port))
 {
 	/* store port name */
 	strncpy(_port, port, sizeof(_port) - 1);
@@ -257,9 +251,6 @@ Thoneflow::collect()
 		// publish sensor_optical_flow
 		sensor_optical_flow_s report{};
 		report.timestamp_sample = hrt_absolute_time();
-		report.device_id = 0; // TODO get_device_id();
-
-		report.dt = _cycle_interval;
 
 		/* Parse each byte of read buffer */
 		for (int i = 0; i < ret; i++) {
@@ -268,9 +259,18 @@ Thoneflow::collect()
 
 		/* Publish most recent valid measurement */
 		if (valid) {
+
+			report.device_id = 0; // TODO get_device_id();
+			report.dt = 10526; // microseconds
+
 			/* Rotate measurements from sensor frame to body frame */
 			float zeroval = 0.0f;
 			rotate_3f(_rotation, report.pixel_flow[0], report.pixel_flow[1], zeroval);
+
+			// Conservative specs according to datasheet
+			report.max_flow_rate = 7.4f;           // Datasheet: 7.4 rad/s
+			report.min_ground_distance = 0.08f;    // Datasheet: 80mm
+			report.max_ground_distance = INFINITY; // Datasheet: infinity
 
 			report.timestamp = hrt_absolute_time();
 
@@ -440,10 +440,10 @@ $ thoneflow stop
 
     PRINT_MODULE_USAGE_NAME("thoneflow", "driver");
     PRINT_MODULE_USAGE_SUBCATEGORY("optical_flow");
-    PRINT_MODULE_USAGE_COMMAND_DESCR("start","Start driver");
+    PRINT_MODULE_USAGE_COMMAND_DESCR("start", "Start driver");
     PRINT_MODULE_USAGE_PARAM_STRING('d', nullptr, nullptr, "Serial device", false);
-    PRINT_MODULE_USAGE_COMMAND_DESCR("stop","Stop driver");
-    PRINT_MODULE_USAGE_COMMAND_DESCR("info","Print driver information");
+    PRINT_MODULE_USAGE_COMMAND_DESCR("stop", "Stop driver");
+    PRINT_MODULE_USAGE_COMMAND_DESCR("info", "Print driver information");
 }
 
 } // namespace
@@ -483,19 +483,11 @@ extern "C" __EXPORT int thoneflow_main(int argc, char *argv[])
             thoneflow::usage();
             return -1;
         }
-    }
 
-    /*
-     * Stop the driver
-     */
-    if (!strcmp(argv[myoptind], "stop")) {
+    } else if (!strcmp(argv[myoptind], "stop")) {
         return thoneflow::stop();
-    }
 
-    /*
-     * Print driver information.
-     */
-    if (!strcmp(argv[myoptind], "info") || !strcmp(argv[myoptind], "status")) {
+    } else if (!strcmp(argv[myoptind], "info") || !strcmp(argv[myoptind], "status")) {
         thoneflow::info();
         return 0;
     }

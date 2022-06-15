@@ -130,7 +130,7 @@ private:
 	hrt_abstime _last_read_time{0};
 
 	// force reset if there hasn't been valid data for an extended period (sensor could be in a bad state)
-	static constexpr hrt_abstime RESET_TIMEOUT_US = 5_s;
+	static constexpr hrt_abstime RESET_TIMEOUT_US = 3_s;
 
 	hrt_abstime _last_good_data{0};
 	hrt_abstime _last_reset{0};
