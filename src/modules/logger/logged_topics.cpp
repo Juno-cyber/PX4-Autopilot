@@ -159,7 +159,7 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic_multi("estimator_innovation_test_ratios", 500, MAX_ESTIMATOR_INSTANCES);
 	add_optional_topic_multi("estimator_innovation_variances", 500, MAX_ESTIMATOR_INSTANCES);
 	add_optional_topic_multi("estimator_innovations", 500, MAX_ESTIMATOR_INSTANCES);
-	add_optional_topic_multi("estimator_optical_flow_vel", 200, MAX_ESTIMATOR_INSTANCES);
+	add_topic_multi("estimator_optical_flow_vel", 200, MAX_ESTIMATOR_INSTANCES); // TODO: restore
 	add_optional_topic_multi("estimator_sensor_bias", 0, MAX_ESTIMATOR_INSTANCES);
 	add_optional_topic_multi("estimator_states", 1000, MAX_ESTIMATOR_INSTANCES);
 	add_optional_topic_multi("estimator_status", 200, MAX_ESTIMATOR_INSTANCES);
@@ -178,12 +178,12 @@ void LoggedTopics::add_default_topics()
 	add_optional_topic("pps_capture", 1000);
 	add_optional_topic_multi("sensor_gyro", 1000, 4);
 	add_optional_topic_multi("sensor_mag", 1000, 4);
-	add_topic_multi("sensor_optical_flow", 0, 1); // TODO: 0 -> 1000
+	add_topic_multi("sensor_optical_flow", 0, 1); // TODO: 0 -> 1000 and optional
 
 	add_topic_multi("vehicle_imu", 500, 4);
 	add_topic_multi("vehicle_imu_status", 1000, 4);
 	add_optional_topic_multi("vehicle_magnetometer", 500, 4);
-	add_optional_topic_multi("vehicle_optical_flow", 0, 1); // TODO: 0 -> 1000
+	add_topic_multi("vehicle_optical_flow", 0, 1); // TODO: 0 -> 1000 and optional
 
 	// SYS_CTRL_ALLOC: additional dynamic control allocation logging when enabled
 	int32_t sys_ctrl_alloc = 0;

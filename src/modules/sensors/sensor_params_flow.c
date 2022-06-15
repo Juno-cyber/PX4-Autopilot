@@ -63,7 +63,7 @@ PARAM_DEFINE_INT32(SENS_FLOW_ROT, 0);
  * @decimal 1
  * @group Sensor Calibration
  */
-PARAM_DEFINE_FLOAT(SENS_FLOW_MINHGT, 0.001f);
+PARAM_DEFINE_FLOAT(SENS_FLOW_MINHGT, 0.08f);
 
 /**
  * Maximum height above ground when reliant on optical flow.

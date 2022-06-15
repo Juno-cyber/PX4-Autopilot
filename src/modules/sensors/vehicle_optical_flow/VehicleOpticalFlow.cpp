@@ -63,7 +63,7 @@ bool VehicleOpticalFlow::Start()
 	_sensor_flow_sub.registerCallback();
 
 	_sensor_gyro_sub.registerCallback();
-	_sensor_gyro_sub.set_required_updates(sensor_gyro_s::ORB_QUEUE_LENGTH - 1);
+	_sensor_gyro_sub.set_required_updates(sensor_gyro_s::ORB_QUEUE_LENGTH / 2);
 
 	_sensor_selection_sub.registerCallback();
 
@@ -175,8 +175,6 @@ void VehicleOpticalFlow::Run()
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[0])
 		    && PX4_ISFINITE(sensor_optical_flow.pixel_flow[1])) {
 
-
-
 			gyroSample gyro_sample;
 			const hrt_abstime timestamp_oldest = sensor_optical_flow.timestamp_sample - lroundf(sensor_optical_flow.dt);
 			const hrt_abstime timestamp_newest = sensor_optical_flow.timestamp;
@@ -218,8 +216,11 @@ void VehicleOpticalFlow::Run()
 			    && PX4_ISFINITE(sensor_optical_flow.delta_angle[2])
 			   ) {
 				// passthrough integrated gyro if available
-				rotate_3f((enum Rotation)_param_sens_flow_rot.get(), sensor_optical_flow.delta_angle[0],
-					  sensor_optical_flow.delta_angle[1], sensor_optical_flow.delta_angle[2]);
+				rotate_3f((enum Rotation)_param_sens_flow_rot.get(),
+					  sensor_optical_flow.delta_angle[0],
+					  sensor_optical_flow.delta_angle[1],
+					  sensor_optical_flow.delta_angle[2]);
+
 				vehicle_optical_flow.gyro_x_rate_integral = sensor_optical_flow.delta_angle[0];
 				vehicle_optical_flow.gyro_y_rate_integral = sensor_optical_flow.delta_angle[1];
 				vehicle_optical_flow.gyro_z_rate_integral = sensor_optical_flow.delta_angle[2];

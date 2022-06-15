@@ -60,15 +60,19 @@ void UavcanFlowBridge::flow_sub_cb(const uavcan::ReceivedDataStructure<com::hex:
 {
 	sensor_optical_flow_s flow{};
 	flow.timestamp_sample = hrt_absolute_time(); // TODO
-	// We're only given an 8 bit field for sensor ID; just use the UAVCAN node ID
-	//flow.sensor_id = msg.getSrcNodeID().get();
 
-	flow.device_id = 0; // TODO
+	device::Device::DeviceId device_id;
+	device_id.devid_s.bus_type = device::Device::DeviceBusType::DeviceBusType_UAVCAN;
+	device_id.devid_s.bus = 0;
+	device_id.devid_s.devtype = DRV_FLOW_DEVTYPE_UAVCAN;
+	device_id.devid_s.address = msg.getSrcNodeID().get() & 0xFF;
+
+	flow.device_id = device_id.devid;
 
 	flow.pixel_flow[0] = msg.flow_integral[0];
 	flow.pixel_flow[1] = msg.flow_integral[1];
 
-	flow.dt = 1.e6f * msg.integration_interval; // s -> micros
+	flow.dt = 1.e6f * msg.integration_interval; // s -> us
 
 	flow.quality = msg.quality;
 

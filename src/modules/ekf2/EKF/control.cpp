@@ -391,10 +391,24 @@ void Ekf::controlOpticalFlowFusion()
 {
 	// Check if on ground motion is un-suitable for use of optical flow
 	if (!_control_status.flags.in_air) {
-		updateOnGroundMotionForOpticalFlowChecks();
+		// When on ground check if the vehicle is being shaken or moved in a way that could cause a loss of navigation
+		const float accel_norm = _accel_vec_filt.norm();
+
+		const bool motion_is_excessive = ((accel_norm > (CONSTANTS_ONE_G * 1.5f)) // upper g limit
+						|| (accel_norm < (CONSTANTS_ONE_G * 0.5f)) // lower g limit
+						|| (_ang_rate_magnitude_filt > _flow_max_rate) // angular rate exceeds flow sensor limit
+						|| (_R_to_earth(2, 2) < cosf(math::radians(30.0f)))); // tilted excessively
+
+		if (motion_is_excessive) {
+			_time_bad_motion_us = _imu_sample_delayed.time_us;
+
+		} else {
+			_time_good_motion_us = _imu_sample_delayed.time_us;
+		}
 
 	} else {
-		resetOnGroundMotionForOpticalFlowChecks();
+		_time_bad_motion_us = 0;
+		_time_good_motion_us = _imu_sample_delayed.time_us;
 	}
 
 	// Accumulate autopilot gyro data across the same time interval as the flow sensor
@@ -424,10 +438,6 @@ void Ekf::controlOpticalFlowFusion()
 
 			// calculate the bias estimate using  a combined LPF and spike filter
 			_flow_gyro_bias = _flow_gyro_bias * 0.99f + matrix::constrain(measured_body_rate - reference_body_rate, -0.1f, 0.1f) * 0.01f;
-
-			// reset the accumulators
-			_imu_del_ang_of.setZero();
-			_delta_time_of = 0.f;
 		}
 
 		if ((_flow_sample_delayed.dt > delta_time_min)
@@ -451,6 +461,11 @@ void Ekf::controlOpticalFlowFusion()
 			_flow_data_ready = false;
 			_flow_compensated_XY_rad.setZero();
 		}
+
+		// reset the accumulators
+		_imu_del_ang_of.setZero();
+		_delta_time_of = 0.0f;
+
 	} else {
 		_flow_compensated_XY_rad.setZero();
 	}
@@ -535,30 +550,6 @@ void Ekf::controlOpticalFlowFusion()
 
 		stopFlowFusion();
 	}
-}
-
-void Ekf::updateOnGroundMotionForOpticalFlowChecks()
-{
-	// When on ground check if the vehicle is being shaken or moved in a way that could cause a loss of navigation
-	const float accel_norm = _accel_vec_filt.norm();
-
-	const bool motion_is_excessive = ((accel_norm > (CONSTANTS_ONE_G * 1.5f)) // upper g limit
-					  || (accel_norm < (CONSTANTS_ONE_G * 0.5f)) // lower g limit
-					  || (_ang_rate_magnitude_filt > _flow_max_rate) // angular rate exceeds flow sensor limit
-					  || (_R_to_earth(2, 2) < cosf(math::radians(30.0f)))); // tilted excessively
-
-	if (motion_is_excessive) {
-		_time_bad_motion_us = _imu_sample_delayed.time_us;
-
-	} else {
-		_time_good_motion_us = _imu_sample_delayed.time_us;
-	}
-}
-
-void Ekf::resetOnGroundMotionForOpticalFlowChecks()
-{
-	_time_bad_motion_us = 0;
-	_time_good_motion_us = _imu_sample_delayed.time_us;
 }
 
 void Ekf::controlGpsYawFusion(bool gps_checks_passing, bool gps_checks_failing)
