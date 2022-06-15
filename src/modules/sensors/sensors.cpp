@@ -76,9 +76,11 @@
 #include "voted_sensors_update.h"
 #include "vehicle_acceleration/VehicleAcceleration.hpp"
 #include "vehicle_angular_velocity/VehicleAngularVelocity.hpp"
-#include "vehicle_air_data/VehicleAirData.hpp"
-
 #include "vehicle_imu/VehicleIMU.hpp"
+
+#ifndef SENSORS_VEHICLE_AIR_DATA
+#define SENSORS_VEHICLE_AIR_DATA 0
+#endif
 
 #ifndef SENSORS_VEHICLE_GPS_POSITION
 #define SENSORS_VEHICLE_GPS_POSITION 0
@@ -91,6 +93,10 @@
 #ifndef SENSORS_VEHICLE_OPTICAL_FLOW
 #define SENSORS_VEHICLE_OPTICAL_FLOW 0
 #endif
+
+#if SENSORS_VEHICLE_AIR_DATA
+#include "vehicle_air_data/VehicleAirData.hpp"
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_GPS_POSITION
 #include "vehicle_gps_position/VehicleGPSPosition.hpp"
@@ -203,7 +209,10 @@ private:
 
 	VehicleAcceleration	_vehicle_acceleration;
 	VehicleAngularVelocity	_vehicle_angular_velocity;
+
+#if SENSORS_VEHICLE_AIR_DATA
 	VehicleAirData          *_vehicle_air_data{nullptr};
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_MAGNETOMETER
 	VehicleMagnetometer     *_vehicle_magnetometer {nullptr};
@@ -301,7 +310,9 @@ Sensors::Sensors(bool hil_enabled) :
 
 	parameters_update();
 
+#if SENSORS_VEHICLE_AIR_DATA
 	InitializeVehicleAirData();
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_GPS_POSITION
 	InitializeVehicleGPSPosition();
@@ -328,10 +339,12 @@ Sensors::~Sensors()
 	_vehicle_acceleration.Stop();
 	_vehicle_angular_velocity.Stop();
 
+#if SENSORS_VEHICLE_AIR_DATA
 	if (_vehicle_air_data) {
 		_vehicle_air_data->Stop();
 		delete _vehicle_air_data;
 	}
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_GPS_POSITION
 	if (_vehicle_gps_position) {
@@ -441,7 +454,9 @@ int Sensors::parameters_update()
 		}
 	}
 
+#if SENSORS_VEHICLE_AIR_DATA
 	InitializeVehicleAirData();
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_GPS_POSITION
 	InitializeVehicleGPSPosition();
@@ -458,6 +473,7 @@ int Sensors::parameters_update()
 	return PX4_OK;
 }
 
+#if SENSORS_VEHICLE_AIR_DATA
 void Sensors::diff_pres_poll()
 {
 	differential_pressure_s diff_pres{};
@@ -564,6 +580,7 @@ void Sensors::diff_pres_poll()
 		}
 	}
 }
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 void
 Sensors::parameter_update_poll(bool forced)
@@ -631,6 +648,7 @@ void Sensors::adc_poll()
 #endif /* ADC_AIRSPEED_VOLTAGE_CHANNEL */
 }
 
+#if SENSORS_VEHICLE_AIR_DATA
 void Sensors::InitializeVehicleAirData()
 {
 	if (_param_sys_has_baro.get()) {
@@ -643,6 +661,7 @@ void Sensors::InitializeVehicleAirData()
 		}
 	}
 }
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 #if SENSORS_VEHICLE_GPS_POSITION
 void Sensors::InitializeVehicleGPSPosition()
@@ -800,7 +819,9 @@ void Sensors::Run()
 	// check analog airspeed
 	adc_poll();
 
+#if SENSORS_VEHICLE_AIR_DATA
 	diff_pres_poll();
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 	// backup schedule as a watchdog timeout
 	ScheduleDelayed(10_ms);
@@ -877,10 +898,12 @@ int Sensors::print_status()
 	}
 #endif // SENSORS_VEHICLE_OPTICAL_FLOW
 
+#if SENSORS_VEHICLE_AIR_DATA
 	if (_vehicle_air_data) {
 		PX4_INFO_RAW("\n");
 		_vehicle_air_data->PrintStatus();
 	}
+#endif // SENSORS_VEHICLE_AIR_DATA
 
 	PX4_INFO_RAW("\n");
 	PX4_INFO_RAW("Airspeed status:\n");

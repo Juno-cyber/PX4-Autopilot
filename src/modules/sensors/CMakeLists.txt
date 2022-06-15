@@ -39,7 +39,7 @@ add_subdirectory(vehicle_angular_velocity)
 add_subdirectory(vehicle_air_data)
 add_subdirectory(vehicle_gps_position)
 add_subdirectory(vehicle_imu)
-#add_subdirectory(vehicle_magnetometer)
+add_subdirectory(vehicle_magnetometer)
 add_subdirectory(vehicle_optical_flow)
 
 px4_add_module(
@@ -65,6 +65,6 @@ px4_add_module(
 		vehicle_air_data
 		vehicle_gps_position
 		vehicle_imu
-		#vehicle_magnetometer
+		vehicle_magnetometer
 		vehicle_optical_flow
 	)
