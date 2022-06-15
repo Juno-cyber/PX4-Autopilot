@@ -63,7 +63,7 @@ bool VehicleOpticalFlow::Start()
 	_sensor_flow_sub.registerCallback();
 
 	_sensor_gyro_sub.registerCallback();
-	_sensor_gyro_sub.set_required_updates(sensor_gyro_s::ORB_QUEUE_LENGTH);
+	_sensor_gyro_sub.set_required_updates(sensor_gyro_s::ORB_QUEUE_LENGTH - 1);
 
 	_sensor_selection_sub.registerCallback();
 
