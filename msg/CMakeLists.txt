@@ -74,7 +74,7 @@ set(msg_files
 	estimator_event_flags.msg
 	estimator_gps_status.msg
 	estimator_innovations.msg
-	estimator_optical_flow_vel.msg
+	vehicle_optical_flow_vel.msg
 	estimator_selector_status.msg
 	estimator_sensor_bias.msg
 	estimator_states.msg

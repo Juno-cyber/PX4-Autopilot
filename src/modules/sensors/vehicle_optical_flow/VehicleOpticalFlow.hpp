@@ -54,7 +54,9 @@
 #include <uORB/topics/sensor_gyro.h>
 #include <uORB/topics/sensor_optical_flow.h>
 #include <uORB/topics/sensor_selection.h>
+#include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_optical_flow.h>
+#include <uORB/topics/vehicle_optical_flow_vel.h>
 
 namespace sensors
 {
@@ -84,10 +86,12 @@ private:
 	static constexpr int MAX_SENSOR_COUNT = 3;
 
 	uORB::Publication<vehicle_optical_flow_s> _vehicle_optical_flow_pub{ORB_ID(vehicle_optical_flow)};
+	uORB::Publication<vehicle_optical_flow_vel_s> _vehicle_optical_flow_vel_pub{ORB_ID(vehicle_optical_flow_vel)};
 
 	uORB::Subscription _params_sub{ORB_ID(parameter_update)};
 
 	uORB::Subscription _distance_sensor_sub{ORB_ID(distance_sensor)};
+	uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 
 	uORB::SubscriptionCallbackWorkItem _sensor_flow_sub{this, ORB_ID(sensor_optical_flow)};
 	uORB::SubscriptionCallbackWorkItem _sensor_gyro_sub{this, ORB_ID(sensor_gyro)};

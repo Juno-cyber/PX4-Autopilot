@@ -1424,14 +1424,18 @@ void EKF2::PublishWindEstimate(const hrt_abstime &timestamp)
 void EKF2::PublishOpticalFlowVel(const hrt_abstime &timestamp)
 {
 	if (_ekf.getFlowCompensated().longerThan(0.f)) {
-		estimator_optical_flow_vel_s flow_vel{};
+		vehicle_optical_flow_vel_s flow_vel{};
 		flow_vel.timestamp_sample = _ekf.get_imu_sample_delayed().time_us;
 
 		_ekf.getFlowVelBody().copyTo(flow_vel.vel_body);
 		_ekf.getFlowVelNE().copyTo(flow_vel.vel_ne);
+
 		_ekf.getFlowUncompensated().copyTo(flow_vel.flow_uncompensated_integral);
 		_ekf.getFlowCompensated().copyTo(flow_vel.flow_compensated_integral);
-		_ekf.getFlowGyro().copyTo(flow_vel.gyro_rate_integral);
+
+		_ekf.getFlowGyro().copyTo(flow_vel.gyro_rate);
+		_ekf.getFlowGyroIntegral().copyTo(flow_vel.gyro_rate_integral);
+
 		flow_vel.timestamp = _replay_mode ? timestamp : hrt_absolute_time();
 
 		_estimator_optical_flow_vel_pub.publish(flow_vel);

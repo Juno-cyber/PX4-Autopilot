@@ -23,8 +23,3 @@ uint8 quality	# Average of quality of accumulated frames, 0: bad quality, 255: m
 float32 max_flow_rate # Magnitude of maximum angular which the optical flow sensor can measure reliably
 float32 min_ground_distance # Minimum distance from ground at which the optical flow sensor operates reliably
 float32 max_ground_distance # Maximum distance from ground at which the optical flow sensor operates reliably
-
-
-
-float32[2] flow_vel_body
-float32 height

@@ -237,25 +237,6 @@ void VehicleOpticalFlow::Run()
 
 					vehicle_optical_flow.integration_timespan_gyro = delta_angle_dt;
 
-					{
-						// NOTE: the EKF uses the reverse sign convention to the flow sensor. EKF assumes positive LOS rate
-						// is produced by a RH rotation of the image about the sensor axis.
-						Vector2f flow_xy_rad{-sensor_optical_flow.pixel_flow[0], -sensor_optical_flow.pixel_flow[1]};
-
-						Vector2f flow_compensated_XY_rad = flow_xy_rad - Vector2f(-delta_angle(0), -delta_angle(1));
-
-						float range = _range;
-
-						const float flow_dt = sensor_optical_flow.dt * 1e-6f;
-
-						Vector2f vel_optflow_body;
-						vel_optflow_body(0) = - range * flow_compensated_XY_rad(1) / flow_dt;
-						vel_optflow_body(1) =   range * flow_compensated_XY_rad(0) / flow_dt;
-
-						vel_optflow_body.copyTo(vehicle_optical_flow.flow_vel_body);
-						vehicle_optical_flow.height = range;
-					}
-
 				} else {
 					vehicle_optical_flow.gyro_x_rate_integral = NAN;
 					vehicle_optical_flow.gyro_y_rate_integral = NAN;
@@ -298,8 +279,72 @@ void VehicleOpticalFlow::Run()
 
 
 			vehicle_optical_flow.timestamp = hrt_absolute_time();
-
 			_vehicle_optical_flow_pub.publish(vehicle_optical_flow);
+
+
+			// vehicle_optical_flow_vel
+			{
+				vehicle_optical_flow_vel_s flow_vel{};
+
+				flow_vel.timestamp_sample = vehicle_optical_flow.timestamp_sample;
+
+				// NOTE: the EKF uses the reverse sign convention to the flow sensor. EKF assumes positive LOS rate
+				// is produced by a RH rotation of the image about the sensor axis.
+				const Vector2f flow_xy_rad{-vehicle_optical_flow.pixel_flow_x_integral, -vehicle_optical_flow.pixel_flow_y_integral};
+				const Vector3f gyro_xyz{-vehicle_optical_flow.gyro_x_rate_integral, -vehicle_optical_flow.gyro_y_rate_integral, -vehicle_optical_flow.gyro_z_rate_integral};
+
+				const float flow_dt = 1e-6f * vehicle_optical_flow.integration_timespan;
+
+				// compensate for body motion to give a LOS rate
+				const Vector2f flow_compensated_XY_rad = flow_xy_rad - gyro_xyz.xy();
+
+				Vector3f vel_optflow_body;
+				vel_optflow_body(0) = - _range * flow_compensated_XY_rad(1) / flow_dt;
+				vel_optflow_body(1) =   _range * flow_compensated_XY_rad(0) / flow_dt;
+				vel_optflow_body(2) = 0.f;
+
+				// vel_body
+				//const Vector2f opt_flow_rate = flow_compensated_XY_rad / flow_dt;
+				//flow_vel.vel_body[0] = -opt_flow_rate(1) * _range;
+				//flow_vel.vel_body[1] = opt_flow_rate(0) * _range;
+				flow_vel.vel_body[0] = vel_optflow_body(0);
+				flow_vel.vel_body[1] = vel_optflow_body(1);
+
+				// vel_ne
+				flow_vel.vel_ne[0] = NAN;
+				flow_vel.vel_ne[1] = NAN;
+
+				vehicle_attitude_s vehicle_attitude{};
+
+				if (_vehicle_attitude_sub.copy(&vehicle_attitude)) {
+					matrix::Dcmf R_to_earth = matrix::Dcmf(vehicle_attitude.q);
+					Vector3f flow_vel_ne = R_to_earth * vel_optflow_body;
+
+					flow_vel.vel_ne[0] = flow_vel_ne(0);
+					flow_vel.vel_ne[1] = flow_vel_ne(1);
+				}
+
+				// flow_uncompensated_integral
+				flow_xy_rad.copyTo(flow_vel.flow_uncompensated_integral);
+
+				// flow_compensated_integral
+				flow_compensated_XY_rad.copyTo(flow_vel.flow_compensated_integral);
+
+
+				const Vector3f measured_body_rate(gyro_xyz * (1.f / flow_dt));
+
+				// gyro_rate
+				flow_vel.gyro_rate[0] = measured_body_rate(0);
+				flow_vel.gyro_rate[1] = measured_body_rate(1);
+
+				// gyro_rate_integral
+				flow_vel.gyro_rate_integral[0] = gyro_xyz(0);
+				flow_vel.gyro_rate_integral[1] = gyro_xyz(1);
+
+				flow_vel.timestamp = hrt_absolute_time();
+
+				_vehicle_optical_flow_vel_pub.publish(flow_vel);
+			}
 		}
 	}
 

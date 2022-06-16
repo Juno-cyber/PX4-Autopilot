@@ -184,6 +184,7 @@ void LoggedTopics::add_default_topics()
 	add_topic_multi("vehicle_imu_status", 1000, 4);
 	add_optional_topic_multi("vehicle_magnetometer", 500, 4);
 	add_topic_multi("vehicle_optical_flow", 0, 1); // TODO: 0 -> 1000 and optional
+	add_topic_multi("vehicle_optical_flow_vel", 0, 1); // // TODO: 0 -> 1000 and optional
 
 	// SYS_CTRL_ALLOC: additional dynamic control allocation logging when enabled
 	int32_t sys_ctrl_alloc = 0;
